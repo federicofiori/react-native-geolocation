@@ -31,7 +31,6 @@ import com.google.android.gms.location.SettingsClient;
 public class PlayServicesLocationManager extends BaseLocationManager {
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationCallback mLocationCallback;
-    private LocationCallback mSingleLocationCallback;
     private SettingsClient mLocationServicesSettingsClient;
 
     protected PlayServicesLocationManager(ReactApplicationContext reactContext) {
@@ -47,8 +46,8 @@ public class PlayServicesLocationManager extends BaseLocationManager {
         Activity currentActivity = mReactContext.getCurrentActivity();
 
         if (currentActivity == null) {
-            mSingleLocationCallback = createSingleLocationCallback(success, error);
-            checkLocationSettings(options, mSingleLocationCallback, error);
+            LocationCallback singleLocationCallback = createSingleLocationCallback(success, error);
+            checkLocationSettings(options, singleLocationCallback, error);
 			return;
         }
 
@@ -58,8 +57,8 @@ public class PlayServicesLocationManager extends BaseLocationManager {
                         if (location != null && (SystemClock.currentTimeMillis() - location.getTime()) < locationOptions.maximumAge) {
                             success.invoke(locationToMap(location));
                         } else {
-                            mSingleLocationCallback = createSingleLocationCallback(success, error);
-                            checkLocationSettings(options, mSingleLocationCallback, error);
+                            LocationCallback singleLocationCallback = createSingleLocationCallback(success, error);
+                            checkLocationSettings(options, singleLocationCallback, error);
                         }
                     });
         } catch (SecurityException e) {
@@ -168,8 +167,7 @@ public class PlayServicesLocationManager extends BaseLocationManager {
 
                 callbackHolder.success(location);
 
-                mFusedLocationClient.removeLocationUpdates(mSingleLocationCallback);
-                mSingleLocationCallback = null;
+                mFusedLocationClient.removeLocationUpdates(this);
             }
 
             public static boolean isLocationEnabled(Context context) {
