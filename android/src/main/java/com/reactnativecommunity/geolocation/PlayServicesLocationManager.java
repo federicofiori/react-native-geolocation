@@ -3,6 +3,7 @@ package com.reactnativecommunity.geolocation;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.location.Location;
+import android.os.Build;
 import android.os.Looper;
 import android.util.Log;
 import android.content.Context;
@@ -108,7 +109,7 @@ public class PlayServicesLocationManager extends BaseLocationManager {
         if (locationOptions.fastestInterval >= 0) {
             requestBuilder.setMinUpdateIntervalMillis(locationOptions.fastestInterval);
         }
-        
+
         if (locationOptions.distanceFilter >= 0) {
             requestBuilder.setMinUpdateDistanceMeters(locationOptions.distanceFilter);
         }
@@ -171,9 +172,26 @@ public class PlayServicesLocationManager extends BaseLocationManager {
                 mSingleLocationCallback = null;
             }
 
+            public static boolean isLocationEnabled(Context context) {
+                LocationManager locationManager;
+
+                try {
+                    locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+                } catch (Exception e) {
+                    return false;
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    return locationManager.isLocationEnabled();
+                }
+
+                return locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+                        || locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            }
+
             @Override
             public void onLocationAvailability(@NonNull LocationAvailability locationAvailability) {
-                if (!locationAvailability.isLocationAvailable()) {
+                if (!locationAvailability.isLocationAvailable() && !isLocationEnabled(mReactContext)) {
                     callbackHolder.error(PositionError.buildError(PositionError.POSITION_UNAVAILABLE, "Location not available (FusedLocationProvider/lastLocation)."));
                 }
             }
